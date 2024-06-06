@@ -1,20 +1,26 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
     <ion-title>
-      Blank
+      Country List
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+<ion-content>
+  <ion-list>
+    <ion-item *ngFor="let country of countries">
+      <ion-thumbnail slot="start">
+        <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" />
+      </ion-thumbnail>
+      <ion-label>
+        {{ country.country }}
+      </ion-label>
+      <ion-button fill="outline" slot="end" (click)="showPopulation(country)">
+        More
+      </ion-button>
+      <div *ngIf="selectedCountryPopulation[country.country] !== undefined">
+        Population: {{ selectedCountryPopulation[country.country] }}
+      </div>
+    </ion-item>
+  </ion-list>
 </ion-content>

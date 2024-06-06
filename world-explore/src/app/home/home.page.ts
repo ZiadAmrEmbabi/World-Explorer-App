@@ -83,20 +83,33 @@ export class HomePage implements OnInit {
     }
   }
 
-  toggleFavorite(country: Country) {
-    if (this.favoriteCountries.has(country.country)) {
-      this.favoriteCountries.delete(country.country);
-    } else {
+  handleSlide(slidingItem: any, event: any, country: Country) {
+    const ratio = event.detail.ratio;
+    if (ratio > 0.5) { // Swiped to the right
+      if (this.showFavorites) {
+        this.deleteCountry(country);
+      }
+      slidingItem.close();
+    } else if (ratio < -0.5) { // Swiped to the left
+      this.addFavorite(country);
+      slidingItem.close();
+    }
+  }
+
+  addFavorite(country: Country) {
+    if (!this.favoriteCountries.has(country.country)) {
       this.favoriteCountries.add(country.country);
     }
     this.filterCountries();
   }
 
   deleteCountry(country: Country) {
-    this.countries = this.countries.filter(c => c !== country);
-    this.filteredCountries = this.filteredCountries.filter(c => c !== country);
-    this.favoriteCountries.delete(country.country); // Remove from favorites if it is in the list
-    this.groupCountriesByLetter();
+    if (this.showFavorites) {
+      this.countries = this.countries.filter(c => c !== country);
+      this.filteredCountries = this.filteredCountries.filter(c => c !== country);
+      this.favoriteCountries.delete(country.country);
+      this.groupCountriesByLetter();
+    }
   }
 
   viewFavorites() {

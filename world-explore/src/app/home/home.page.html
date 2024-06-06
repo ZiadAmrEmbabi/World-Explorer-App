@@ -1,26 +1,58 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>
-      Country List
+      Welcome to the World App
     </ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="viewFavorites()">
+        {{ showFavorites ? 'All Countries' : 'View Favorites' }}
+      </ion-button>
+    </ion-buttons>
+    <ion-searchbar [(ngModel)]="searchTerm" (ionInput)="filterCountries()"></ion-searchbar>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <ion-list>
-    <ion-item *ngFor="let country of countries">
-      <ion-thumbnail slot="start">
-        <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" />
-      </ion-thumbnail>
-      <ion-label>
-        {{ country.country }}
-      </ion-label>
-      <ion-button fill="outline" slot="end" (click)="showPopulation(country)">
-        More
-      </ion-button>
-      <div *ngIf="selectedCountryPopulation[country.country] !== undefined">
-        Population: {{ selectedCountryPopulation[country.country] }}
-      </div>
-    </ion-item>
+<ion-content #content>
+  <ion-list *ngFor="let letter of getKeys(groupedCountries)">
+    <ion-item-divider id="letter-{{ letter }}">
+      <ion-label>{{ letter }}</ion-label>
+    </ion-item-divider>
+    <ion-item-sliding *ngFor="let country of groupedCountries[letter]" [class.favorite]="favoriteCountries.has(country.country)" class="country-item" (ionSwipe)="addFavorite(country)">
+      <ion-item>
+        <ion-thumbnail slot="start">
+          <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" class="country-flag" />
+        </ion-thumbnail>
+        <ion-label>
+          {{ country.country }}
+        </ion-label>
+        <div class="details">
+          <span *ngIf="selectedCountryPopulation[country.country] !== undefined" class="population">
+            Population: {{ selectedCountryPopulation[country.country] }}
+          </span>
+          <ion-button fill="outline" slot="end" (click)="showPopulation(country)">
+            More
+          </ion-button>
+        </div>
+      </ion-item>
+      <ion-item-options side="start">
+        <ion-item-option color="favorite" (click)="addFavorite(country)">
+          Add to Favorites
+        </ion-item-option>
+      </ion-item-options>
+      <ion-item-options side="end">
+        <ion-item-option color="danger" (click)="deleteCountry(country)">
+          Delete
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
   </ion-list>
+  <div class="alphabet-nav">
+    <ion-list>
+      <ion-item *ngFor="let letter of getKeys(groupedCountries)" (click)="scrollToLetter(letter)">
+        <ion-label>{{ letter }}</ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
 </ion-content>

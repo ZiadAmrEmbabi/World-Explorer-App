@@ -9,10 +9,11 @@
 UserInterfaceState.xcuserstate
 $RECYCLE.BIN/
 
+# Logs
 *.log
 log.txt
 
-
+# Source maps
 /.sourcemaps
 /.versions
 /coverage
@@ -36,7 +37,7 @@ yarn-error.log
 
 # IDEs and editors
 .idea/
-.project
+/.project
 .classpath
 .c9/
 *.launch
@@ -51,7 +52,6 @@ yarn-error.log
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
-
 
 # Miscellaneous
 /.angular

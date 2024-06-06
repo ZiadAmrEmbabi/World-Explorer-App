@@ -1,0 +1,7 @@
+{
+  "name": "world-explore",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

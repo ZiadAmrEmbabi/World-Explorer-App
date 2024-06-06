@@ -9,6 +9,9 @@
 <ion-content>
   <ion-list>
     <ion-item *ngFor="let country of countries">
+      <ion-thumbnail slot="start">
+        <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" />
+      </ion-thumbnail>
       <ion-label>
         {{ country.country }}
       </ion-label>

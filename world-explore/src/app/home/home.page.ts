@@ -2,36 +2,36 @@ import { Component, OnInit } from '@angular/core';
 import { Country } from '../models/model';
 import { CountryService } from '../services/country.service.service';
 
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.page.html',
-  styleUrls: ['./home.page.scss'],
+  styleUrls: ['./home.page.scss']
 })
 export class HomePage implements OnInit {
-  countries: Country[] | any;
-  selectedCountryPopulation: { [country: string]: number | null } = {};
+  countries: Country[] = [];
+  selectedCountryPopulation: { [countryName: string]: number | null } = {};
+  countryFlags: { [countryName: string]: string } = {};
 
-
-
-  constructor(private countryService: CountryService) { }
+  constructor(private countryService: CountryService) {}
 
   ngOnInit() {
-    this.loadCountries();
-  }
-
-  loadCountries() {
-    this.countryService.getCountries().subscribe(data => {
-      console.log(data);
-      this.countries = data.data;
+    this.countryService.getCountries().subscribe(response => {
+      this.countries = response.data;
+      this.countries.forEach(country => {
+        this.countryService.getFlag(country.iso2).subscribe(flagResponse => {
+          if (flagResponse.data && flagResponse.data.flag) {
+            this.countryFlags[country.country] = flagResponse.data.flag;
+          }
+        });
+      });
     });
   }
 
   showPopulation(country: Country) {
     if (this.selectedCountryPopulation[country.country] !== undefined) {
-      // If population is already displayed, hide it
       delete this.selectedCountryPopulation[country.country];
     } else {
-      // Fetch and display the population
       this.countryService.getPopulation(country.country).subscribe(data => {
         const population = data.data.populationCounts.pop();
         this.selectedCountryPopulation[country.country] = population.value;

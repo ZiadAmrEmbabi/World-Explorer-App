@@ -18,4 +18,9 @@ export class CountryService {
     const populationUrl = `${this.apiUrl}/population`;
     return this.http.post(populationUrl, { country });
   }
+
+  getFlag(iso2: string): Observable<any> {
+    const flagUrl = `${this.apiUrl}/flag/images`;
+    return this.http.post(flagUrl, { iso2 });
+  }
 }

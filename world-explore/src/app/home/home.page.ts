@@ -22,16 +22,24 @@ export class HomePage implements OnInit {
   constructor(private countryService: CountryService) {}
 
   ngOnInit() {
+    this.loadCountries();
+  }
+
+  loadCountries() {
     this.countryService.getCountries().subscribe(response => {
       this.countries = response.data.sort((a, b) => a.country.localeCompare(b.country));
       this.filteredCountries = [...this.countries];
       this.groupCountriesByLetter();
-      this.countries.forEach(country => {
-        this.countryService.getFlag(country.iso2).subscribe(flagResponse => {
-          if (flagResponse.data && flagResponse.data.flag) {
-            this.countryFlags[country.country] = flagResponse.data.flag;
-          }
-        });
+      this.loadCountryFlags();
+    });
+  }
+
+  loadCountryFlags() {
+    this.countries.forEach(country => {
+      this.countryService.getFlag(country.iso2).subscribe(flagResponse => {
+        if (flagResponse.data && flagResponse.data.flag) {
+          this.countryFlags[country.country] = flagResponse.data.flag;
+        }
       });
     });
   }
@@ -46,7 +54,6 @@ export class HomePage implements OnInit {
       if (country.iso3 !== 'ISR') {
         this.groupedCountries[firstLetter].push(country);
       }
-  
     });
   }
 
@@ -56,7 +63,9 @@ export class HomePage implements OnInit {
     } else {
       this.countryService.getPopulation(country.iso3).subscribe(data => {
         const population = data.data.populationCounts.pop();
-        this.selectedCountryPopulation[country.country] = population.value;
+        if (population) {
+          this.selectedCountryPopulation[country.country] = population.value;
+        }
       });
     }
   }
@@ -66,16 +75,10 @@ export class HomePage implements OnInit {
   }
 
   filterCountries() {
-    if (this.showFavorites) {
-      this.filteredCountries = this.countries.filter(country =>
-        this.favoriteCountries.has(country.country) &&
-        country.country.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    } else {
-      this.filteredCountries = this.countries.filter(country =>
-        country.country.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    }
+    this.filteredCountries = this.countries.filter(country => 
+      country.country.toLowerCase().includes(this.searchTerm.toLowerCase()) &&
+      (!this.showFavorites || this.favoriteCountries.has(country.country))
+    );
     this.groupCountriesByLetter();
   }
 
@@ -86,19 +89,15 @@ export class HomePage implements OnInit {
     }
   }
 
-  toggleFavorite(country: Country,event :any) {
-    console.log(event.detail)
-    if (event.detail.side=="start")
-      {
-    if (!this.favoriteCountries.has(country.country)) {
-      this.favoriteCountries.add(country.country);
+  toggleFavorite(country: Country, event: any) {
+    if (event.detail.side === "start") {
+      if (!this.favoriteCountries.has(country.country)) {
+        this.favoriteCountries.add(country.country);
+      }
+    } else {
+      this.deleteCountry(country);
     }
     this.filterCountries();
-  }
-  else {
-    this.deleteCountry(country);
-  }
-
   }
 
   deleteCountry(country: Country) {

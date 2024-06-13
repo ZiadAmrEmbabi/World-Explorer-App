@@ -14,9 +14,9 @@ export class CountryService {
     return this.http.get<{ data: any[] }>(this.apiUrl);
   }
 
-  getPopulation(country: string): Observable<any> {
+  getPopulation(iso3: string): Observable<any> {
     const populationUrl = `${this.apiUrl}/population`;
-    return this.http.post(populationUrl, { country });
+    return this.http.post(populationUrl, { iso3 });
   }
 
   getFlag(iso2: string): Observable<any> {

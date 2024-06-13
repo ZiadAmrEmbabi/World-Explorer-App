@@ -19,7 +19,7 @@
     <ion-item-divider id="letter-{{ letter }}">
       <ion-label>{{ letter }}</ion-label>
     </ion-item-divider>
-    <ion-item-sliding *ngFor="let country of groupedCountries[letter]" [class.favorite]="favoriteCountries.has(country.country)" class="country-item" (ionSwipe)="addFavorite(country)">
+    <ion-item-sliding *ngFor="let country of groupedCountries[letter]" [class.favorite]="favoriteCountries.has(country.country)" class="country-item" (ionSwipe)="toggleFavorite(country,$event)">
       <ion-item>
         <ion-thumbnail slot="start">
           <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" class="country-flag" />
@@ -37,7 +37,7 @@
         </div>
       </ion-item>
       <ion-item-options side="start">
-        <ion-item-option color="favorite" (click)="addFavorite(country)">
+        <ion-item-option color="favorite" (click)="toggleFavorite(country,$event)">
           Add to Favorites
         </ion-item-option>
       </ion-item-options>

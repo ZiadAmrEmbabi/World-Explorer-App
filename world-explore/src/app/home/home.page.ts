@@ -37,13 +37,16 @@ export class HomePage implements OnInit {
   }
 
   groupCountriesByLetter() {
-    this.groupedCountries = {}; // Reset the groupedCountries object
+    this.groupedCountries = {};
     this.filteredCountries.forEach(country => {
       const firstLetter = country.country[0].toUpperCase();
       if (!this.groupedCountries[firstLetter]) {
         this.groupedCountries[firstLetter] = [];
       }
-      this.groupedCountries[firstLetter].push(country);
+      if (country.iso3 !== 'ISR') {
+        this.groupedCountries[firstLetter].push(country);
+      }
+  
     });
   }
 
@@ -51,7 +54,7 @@ export class HomePage implements OnInit {
     if (this.selectedCountryPopulation[country.country] !== undefined) {
       delete this.selectedCountryPopulation[country.country];
     } else {
-      this.countryService.getPopulation(country.country).subscribe(data => {
+      this.countryService.getPopulation(country.iso3).subscribe(data => {
         const population = data.data.populationCounts.pop();
         this.selectedCountryPopulation[country.country] = population.value;
       });
@@ -83,29 +86,23 @@ export class HomePage implements OnInit {
     }
   }
 
-  handleSlide(slidingItem: any, event: any, country: Country) {
-    const ratio = event.detail.ratio;
-    if (ratio > 0.5) { // Swiped to the right
-      if (this.showFavorites) {
-        this.deleteCountry(country);
-      }
-      slidingItem.close();
-    } else if (ratio < -0.5) { // Swiped to the left
-      this.addFavorite(country);
-      slidingItem.close();
-    }
-  }
-
-  addFavorite(country: Country) {
+  toggleFavorite(country: Country,event :any) {
+    console.log(event.detail)
+    if (event.detail.side=="start")
+      {
     if (!this.favoriteCountries.has(country.country)) {
       this.favoriteCountries.add(country.country);
     }
     this.filterCountries();
   }
+  else {
+    this.deleteCountry(country);
+  }
+
+  }
 
   deleteCountry(country: Country) {
     if (this.showFavorites) {
-      this.countries = this.countries.filter(c => c !== country);
       this.filteredCountries = this.filteredCountries.filter(c => c !== country);
       this.favoriteCountries.delete(country.country);
       this.groupCountriesByLetter();

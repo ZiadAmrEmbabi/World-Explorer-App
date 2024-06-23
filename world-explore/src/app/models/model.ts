@@ -3,6 +3,6 @@ export interface Country {
     iso2: string;
     iso3: string;
     cities: string[];
-    population?: number;
+    population?: number; 
   }
   

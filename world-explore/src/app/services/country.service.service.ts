@@ -23,4 +23,5 @@ export class CountryService {
     const flagUrl = `${this.apiUrl}/flag/images`;
     return this.http.post(flagUrl, { iso2 });
   }
+  
 }

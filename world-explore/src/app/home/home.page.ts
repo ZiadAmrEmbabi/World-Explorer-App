@@ -22,16 +22,32 @@ export class HomePage implements OnInit {
   constructor(private countryService: CountryService) {}
 
   ngOnInit() {
+  }
+  ngAfterViewInit()
+  {
     this.loadCountries();
+    
   }
 
+  
   loadCountries() {
-    this.countryService.getCountries().subscribe(response => {
-      this.countries = response.data.sort((a, b) => a.country.localeCompare(b.country));
-      this.filteredCountries = [...this.countries];
-      this.groupCountriesByLetter();
-      this.loadCountryFlags();
-    });
+    this.countryService.getCountries().subscribe(
+      response => this.handleCountryResponse(response),
+      error => this.handleError(error)
+    );
+  }
+  handleError(error: any) {
+    console.error('Error fetching countries:', error);
+    }
+
+  handleCountryResponse(response: any) {
+    this.countries = this.sortCountries(response.data);
+    this.filteredCountries = [...this.countries];
+    this.groupCountriesByLetter();
+    this.loadCountryFlags();
+  }
+  sortCountries(countries: Country[]): Country[] {
+    return countries.sort((a, b) => a.country.localeCompare(b.country));
   }
 
   loadCountryFlags() {
@@ -51,9 +67,8 @@ export class HomePage implements OnInit {
       if (!this.groupedCountries[firstLetter]) {
         this.groupedCountries[firstLetter] = [];
       }
-      if (country.iso3 !== 'ISR') {
-        this.groupedCountries[firstLetter].push(country);
-      }
+      country.iso3 !=='ISR' &&  this.groupedCountries[firstLetter].push(country);
+      
     });
   }
 
@@ -62,14 +77,14 @@ export class HomePage implements OnInit {
       delete this.selectedCountryPopulation[country.country];
     } else {
       this.countryService.getPopulation(country.iso3).subscribe(data => {
-        const population = data.data.populationCounts.pop();
+        const population = data?.data?.populationCounts?.at(-1);
         if (population) {
           this.selectedCountryPopulation[country.country] = population.value;
         }
       });
     }
   }
-
+  
   getKeys(obj: any): string[] {
     return Object.keys(obj).sort();
   }

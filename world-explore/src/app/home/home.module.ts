@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HomePage } from './home.page';
 import { HomePageRoutingModule } from './home-routing.module';
 import { SortCountriesPipe } from '../pipes/sort-countries.pipe';
+import { GroupByLetterPipe } from '../pipes/groupByLetter.pipe';
 
 @NgModule({
   imports: [
@@ -15,7 +16,8 @@ import { SortCountriesPipe } from '../pipes/sort-countries.pipe';
   ],
   declarations: [
     HomePage,
-    SortCountriesPipe
+    SortCountriesPipe,
+    GroupByLetterPipe
   ]
 })
 export class HomePageModule {}

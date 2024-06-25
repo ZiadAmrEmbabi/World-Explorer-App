@@ -7,18 +7,13 @@ import { CountryCode } from '../shared/country-code.enum';  // Import the enum f
 })
 export class GroupByLetterPipe implements PipeTransform {
   transform(countries: Country[]): { [key: string]: Country[] } {
-    const groupedCountries: { [key: string]: Country[] } = {};
-
-    countries.forEach(country => {
-      if (country.iso3 !== CountryCode.ISR) {
+    return countries
+      .filter(country => country.iso3 !== CountryCode.ISR)
+      .reduce((groupedCountries, country) => {
         const firstLetter = country.country[0].toUpperCase();
-        if (!groupedCountries[firstLetter]) {
-          groupedCountries[firstLetter] = [];
-        }
-        groupedCountries[firstLetter].push(country);
-      }
-    });
-
-    return groupedCountries;
+        groupedCountries[firstLetter] = [...(groupedCountries[firstLetter] || []), country];
+        return groupedCountries;
+      }, {} as { [key: string]: Country[] });
   }
+  
 }

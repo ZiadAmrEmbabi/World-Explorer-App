@@ -36,9 +36,9 @@ export class HomePage implements OnInit {
   handleError(error: any) {
     console.error('Error fetching countries:', error);
   }
-
+  
   handleCountryResponse(response: any) {
-    this.countries = response?.data && Array.isArray(response.data) ? response.data : [];
+    this.countries = Array.isArray(response?.data) ? response.data : [];
     if (this.countries.length) {
       this.filterCountries();
       this.loadCountryFlags();
@@ -50,13 +50,11 @@ export class HomePage implements OnInit {
   loadCountryFlags() {
     this.countries.forEach(country => {
       this.countryService.getFlag(country.iso2).pipe(take(1)).subscribe(flagResponse => {
-        if (flagResponse.data && flagResponse.data.flag) {
-          this.countryFlags[country.country] = flagResponse.data.flag;
-        }
+        this.countryFlags[country.country] = flagResponse?.data?.flag ?? '';
       });
     });
   }
-
+  
   showPopulation(country: Country) {
     if (this.selectedCountryPopulation[country.country] !== undefined) {
       delete this.selectedCountryPopulation[country.country];
@@ -75,18 +73,19 @@ export class HomePage implements OnInit {
   }
 
   filterCountries(event?: any) {
-    if (event) {
-      this.searchTerm = event.target.value.toLowerCase();
-    }
+    this.searchTerm = event?.target?.value?.toLowerCase() ?? '';
+
 
     const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
 
     this.filteredCountries = this.countries.filter(country => {
-      const lowerCaseCountryName = country.country.toLowerCase();
-      return lowerCaseCountryName.includes(lowerCaseSearchTerm) &&
-             (!this.showFavorites || this.favoriteCountries.has(country.country)) &&
-             (!this.showFavorites || !this.favoriteCountries.has(country.country)) &&
-             country.iso3 !== CountryCode.ISR;  // Filter out Israel
+        const lowerCaseCountryName = country.country.toLowerCase();
+        const matchesSearchTerm = lowerCaseCountryName.includes(lowerCaseSearchTerm);
+        const isFavorite = this.favoriteCountries.has(country.country);
+
+        return matchesSearchTerm &&
+               (!this.showFavorites || isFavorite) &&
+               country.iso3 !== CountryCode.ISR;
     });
   }
 
@@ -98,15 +97,15 @@ export class HomePage implements OnInit {
   }
 
   toggleFavorite(country: Country, event: any) {
-    if (event.detail.side === 'start') {
-      if (this.favoriteCountries.has(country.country)) {
-        this.favoriteCountries.delete(country.country);
-      } else {
-        this.favoriteCountries.add(country.country);
-      }
-      this.filterCountries(); // Update the filtered countries list
+    if (event.detail.side === 'start' ) {
+      this.favoriteCountries.has(country.country)
+        ? this.favoriteCountries.delete(country.country)
+        : this.favoriteCountries.add(country.country);
+      
+      this.filterCountries(); 
     }
   }
+  
 
   deleteCountry(country: Country) {
     if (this.showFavorites) {
@@ -121,6 +120,6 @@ export class HomePage implements OnInit {
   }
 
   getSafeFlagUrl(countryName: string): string | null {
-    return this.countryFlags[countryName] || null;
+    return this.countryFlags[countryName];
   }
 }

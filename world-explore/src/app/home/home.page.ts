@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { Country } from '../models/model';
 import { CountryService } from '../services/country.service.service';
-import { take } from 'rxjs/operators'; 
+import { take } from 'rxjs/operators';
 import { CountryCode } from '../shared/country-code.enum';  // Import the enum from the shared folder
+import { ToastController } from '@ionic/angular';  // Import ToastController
 
 @Component({
   selector: 'app-home',
@@ -13,14 +14,16 @@ export class HomePage implements OnInit {
   countries: Country[] = [];
   filteredCountries: Country[] = [];
   selectedCountryPopulation: { [countryName: string]: number | null } = {};
-  countryFlags: { [countryName: string]: string } = {};
   searchTerm: string = '';
   favoriteCountries: Set<string> = new Set();
   showFavorites: boolean = false;
 
   @ViewChild('content', { static: false }) content!: ElementRef;
 
-  constructor(private countryService: CountryService) {}
+  constructor(
+    private countryService: CountryService,
+    private toastController: ToastController  // Inject ToastController
+  ) {}
 
   ngOnInit() {
     this.loadCountries();
@@ -33,10 +36,17 @@ export class HomePage implements OnInit {
     );
   }
 
-  handleError(error: any) {
+  async handleError(error: any) {
     console.error('Error fetching countries:', error);
+    const toast = await this.toastController.create({
+      message: 'Error fetching countries: ' + error.message,
+      duration: 3000,
+      color: 'danger',
+      position: 'top'
+    });
+    await toast.present();
   }
-  
+
   handleCountryResponse(response: any) {
     this.countries = Array.isArray(response?.data) ? response.data : [];
     if (this.countries.length) {
@@ -49,12 +59,14 @@ export class HomePage implements OnInit {
 
   loadCountryFlags() {
     this.countries.forEach(country => {
-      this.countryService.getFlag(country.iso2).pipe(take(1)).subscribe(flagResponse => {
-        this.countryFlags[country.country] = flagResponse?.data?.flag ?? '';
-      });
+      if (country && country.iso2) {  // Safe check for country and iso2
+        this.countryService.getFlag(country.iso2).pipe(take(1)).subscribe(flagResponse => {
+          country.flagUrl = flagResponse?.data?.flag ?? '';
+        });
+      }
     });
   }
-  
+
   showPopulation(country: Country) {
     if (this.selectedCountryPopulation[country.country] !== undefined) {
       delete this.selectedCountryPopulation[country.country];
@@ -75,17 +87,16 @@ export class HomePage implements OnInit {
   filterCountries(event?: any) {
     this.searchTerm = event?.target?.value?.toLowerCase() ?? '';
 
-
     const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
 
     this.filteredCountries = this.countries.filter(country => {
-        const lowerCaseCountryName = country.country.toLowerCase();
-        const matchesSearchTerm = lowerCaseCountryName.includes(lowerCaseSearchTerm);
-        const isFavorite = this.favoriteCountries.has(country.country);
+      const lowerCaseCountryName = country.country.toLowerCase();
+      const matchesSearchTerm = lowerCaseCountryName.includes(lowerCaseSearchTerm);
+      const isFavorite = this.favoriteCountries.has(country.country);
 
-        return matchesSearchTerm &&
-               (!this.showFavorites || isFavorite) &&
-               country.iso3 !== CountryCode.ISR;
+      return matchesSearchTerm &&
+        (!this.showFavorites || isFavorite) &&
+        country.iso3 !== CountryCode.ISR;
     });
   }
 
@@ -97,13 +108,8 @@ export class HomePage implements OnInit {
   }
 
   toggleFavorite(country: Country, event: any) {
-    if (event.detail.side === 'start' ) {
-      this.favoriteCountries.has(country.country)
-        ? this.favoriteCountries.delete(country.country)
-        : this.favoriteCountries.add(country.country);
-      
-      this.filterCountries(); 
-    }
+    event.detail.side === 'start' ? this.favoriteCountries.add(country.country) :
+     (this.favoriteCountries.delete(country.country), this.filterCountries());
   }
   
 
@@ -116,10 +122,11 @@ export class HomePage implements OnInit {
 
   viewFavorites() {
     this.showFavorites = !this.showFavorites;
-    this.filterCountries(); // Update the filtered countries list
+    this.filterCountries();
   }
 
-  getSafeFlagUrl(countryName: string): string | null {
-    return this.countryFlags[countryName];
+  isSafeFlagUrl(url: string): boolean {
+    // Implement any additional checks needed
+    return url.startsWith('https://');
   }
 }

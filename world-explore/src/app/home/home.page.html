@@ -10,22 +10,25 @@
         {{ showFavorites ? 'All Countries' : 'View Favorites' }}
       </ion-button>
     </ion-buttons>
-    <ion-searchbar [(ngModel)]="searchTerm" (ionInput)="filterCountries()"></ion-searchbar>
+    <ion-searchbar (ionInput)="filterCountries($event)"></ion-searchbar>
   </ion-toolbar>
 </ion-header>
 
 <ion-content #content>
-  <ion-list *ngFor="let letter of getKeys(groupedCountries)">
+  <ion-list *ngFor="let letter of getKeys(filteredCountries | groupByLetter)">
     <ion-item-divider id="letter-{{ letter }}">
       <ion-label>{{ letter }}</ion-label>
     </ion-item-divider>
-    <ion-item-sliding *ngFor="let country of groupedCountries[letter]" [class.favorite]="favoriteCountries.has(country.country)" class="country-item" (ionSwipe)="toggleFavorite(country,$event)">
+    <ion-item-sliding *ngFor="let country of (filteredCountries | groupByLetter)[letter] | sortCountries"
+      [ngClass]="{ 'favorite': favoriteCountries.has(country.country) }" class="country-item" (ionSwipe)="toggleFavorite(country, $event)">
       <ion-item>
         <ion-thumbnail slot="start">
-          <img [src]="countryFlags[country.country]" *ngIf="countryFlags[country.country]" class="country-flag" />
+          <ng-container *ngIf="country?.flagUrl">
+            <ion-img [src]="country?.flagUrl" class="country-flag"></ion-img>
+          </ng-container>
         </ion-thumbnail>
         <ion-label>
-          {{ country.country }}
+          {{ country?.country }}
         </ion-label>
         <div class="details">
           <span *ngIf="selectedCountryPopulation[country.country] !== undefined" class="population">
@@ -37,8 +40,8 @@
         </div>
       </ion-item>
       <ion-item-options side="start">
-        <ion-item-option color="favorite" (click)="toggleFavorite(country,$event)">
-          Add to Favorites
+        <ion-item-option color="favorite" (click)="toggleFavorite(country, $event)">
+          {{ favoriteCountries.has(country.country) ? 'Remove from Favorites' : 'Add to Favorites' }}
         </ion-item-option>
       </ion-item-options>
       <ion-item-options side="end">
@@ -50,7 +53,7 @@
   </ion-list>
   <div class="alphabet-nav">
     <ion-list>
-      <ion-item *ngFor="let letter of getKeys(groupedCountries)" (click)="scrollToLetter(letter)">
+      <ion-item *ngFor="let letter of getKeys(filteredCountries | groupByLetter)" (click)="scrollToLetter(letter)">
         <ion-label>{{ letter }}</ion-label>
       </ion-item>
     </ion-list>

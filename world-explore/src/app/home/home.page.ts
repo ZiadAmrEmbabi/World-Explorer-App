@@ -1,6 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { Country } from '../models/model';
 import { CountryService } from '../services/country.service.service';
+import { finalize, take } from 'rxjs/operators';
+import { CountryCode } from '../shared/country-code.enum'; 
+import { ToastController } from '@ionic/angular';  
 
 @Component({
   selector: 'app-home',
@@ -10,53 +13,81 @@ import { CountryService } from '../services/country.service.service';
 export class HomePage implements OnInit {
   countries: Country[] = [];
   filteredCountries: Country[] = [];
-  groupedCountries: { [key: string]: Country[] } = {};
   selectedCountryPopulation: { [countryName: string]: number | null } = {};
-  countryFlags: { [countryName: string]: string } = {};
   searchTerm: string = '';
   favoriteCountries: Set<string> = new Set();
   showFavorites: boolean = false;
 
   @ViewChild('content', { static: false }) content!: ElementRef;
 
-  constructor(private countryService: CountryService) {}
+  constructor(
+    private countryService: CountryService,
+    private toastController: ToastController 
+  ) {}
 
   ngOnInit() {
-    this.countryService.getCountries().subscribe(response => {
-      this.countries = response.data.sort((a, b) => a.country.localeCompare(b.country));
-      this.filteredCountries = [...this.countries];
-      this.groupCountriesByLetter();
-      this.countries.forEach(country => {
-        this.countryService.getFlag(country.iso2).subscribe(flagResponse => {
-          if (flagResponse.data && flagResponse.data.flag) {
-            this.countryFlags[country.country] = flagResponse.data.flag;
-          }
-        });
-      });
-    });
+    this.loadCountries();
   }
 
-  groupCountriesByLetter() {
-    this.groupedCountries = {};
-    this.filteredCountries.forEach(country => {
-      const firstLetter = country.country[0].toUpperCase();
-      if (!this.groupedCountries[firstLetter]) {
-        this.groupedCountries[firstLetter] = [];
+  loadCountries() {
+    this.countryService.getCountries().pipe(take(1)).subscribe(
+      response => this.handleCountryResponse(response),
+      error => this.handleError(error)
+    );
+  }
+
+  async handleError(error: any) {
+    console.error('Error fetching countries:', error);
+    const toast = await this.toastController.create({
+      message: 'Error fetching countries: ' + error.message,
+      duration: 3000,
+      color: 'danger',
+      position: 'top'
+    });
+    await toast.present();
+  }
+
+  handleCountryResponse(response: any) {
+    this.countries = Array.isArray(response?.data) ? response.data : [];
+    if (this.countries.length) {
+      this.filterCountries();
+      this.loadCountryFlags();
+    } else {
+      console.error('Invalid response format:', response);
+    }
+  }
+
+  loadCountryFlags() {
+    this.countries.forEach(country => {
+      if (country && country.iso2) {
+        this.countryService.getFlag(country.iso2).pipe(
+          take(1), 
+          finalize(() => {
+            
+           
+          })
+        ).subscribe(
+          flagResponse => {
+            country.flagUrl = flagResponse?.data?.flag ?? '';
+          },
+          error => {
+            console.error('Error fetching flag:', error);
+          }
+        );
       }
-      if (country.iso3 !== 'ISR') {
-        this.groupedCountries[firstLetter].push(country);
-      }
-  
     });
   }
+  
 
   showPopulation(country: Country) {
-    if (this.selectedCountryPopulation[country.country] !== undefined) {
-      delete this.selectedCountryPopulation[country.country];
+    if (this.selectedCountryPopulation[country?.country] !== undefined) {
+      delete this.selectedCountryPopulation[country?.country];
     } else {
-      this.countryService.getPopulation(country.iso3).subscribe(data => {
-        const population = data.data.populationCounts.pop();
-        this.selectedCountryPopulation[country.country] = population.value;
+      this.countryService.getPopulation(country?.iso3).pipe(take(1)).subscribe(data => {
+        const population = data?.data?.populationCounts?.at(-1);
+        if (population) {
+          this.selectedCountryPopulation[country?.country] = population.value;
+        }
       });
     }
   }
@@ -65,18 +96,20 @@ export class HomePage implements OnInit {
     return Object.keys(obj).sort();
   }
 
-  filterCountries() {
-    if (this.showFavorites) {
-      this.filteredCountries = this.countries.filter(country =>
-        this.favoriteCountries.has(country.country) &&
-        country.country.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    } else {
-      this.filteredCountries = this.countries.filter(country =>
-        country.country.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    }
-    this.groupCountriesByLetter();
+  filterCountries(event?: any) {
+    this.searchTerm = event?.target?.value?.toLowerCase() ?? '';
+
+    const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
+
+    this.filteredCountries = this.countries.filter(country => {
+      const lowerCaseCountryName = country?.country.toLowerCase();
+      const matchesSearchTerm = lowerCaseCountryName.includes(lowerCaseSearchTerm);
+      const isFavorite = this.favoriteCountries.has(country?.country);
+
+      return matchesSearchTerm &&
+        (!this.showFavorites || isFavorite) &&
+        country?.iso3 !== CountryCode?.ISR;
+    });
   }
 
   scrollToLetter(letter: string) {
@@ -86,31 +119,25 @@ export class HomePage implements OnInit {
     }
   }
 
-  toggleFavorite(country: Country,event :any) {
-    console.log(event.detail)
-    if (event.detail.side=="start")
-      {
-    if (!this.favoriteCountries.has(country.country)) {
-      this.favoriteCountries.add(country.country);
-    }
-    this.filterCountries();
+  toggleFavorite(country: Country, event: any) {
+    event.detail.side === 'start' ? this.favoriteCountries.add(country?.country) :
+     (this.favoriteCountries.delete(country?.country), this.filterCountries());
   }
-  else {
-    this.deleteCountry(country);
-  }
-
-  }
+  
 
   deleteCountry(country: Country) {
     if (this.showFavorites) {
       this.filteredCountries = this.filteredCountries.filter(c => c !== country);
-      this.favoriteCountries.delete(country.country);
-      this.groupCountriesByLetter();
+      this.favoriteCountries.delete(country?.country);
     }
   }
 
   viewFavorites() {
     this.showFavorites = !this.showFavorites;
     this.filterCountries();
+  }
+
+  isSafeFlagUrl(url: string): boolean {
+    return url.startsWith('https://');
   }
 }

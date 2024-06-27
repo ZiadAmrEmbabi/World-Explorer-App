@@ -23,12 +23,12 @@
       [ngClass]="{ 'favorite': favoriteCountries.has(country.country) }" class="country-item" (ionSwipe)="toggleFavorite(country, $event)">
       <ion-item>
         <ion-thumbnail slot="start">
-          <ng-container *ngIf="country.flagUrl">
-            <ion-img [src]="country.flagUrl" class="country-flag"></ion-img>
+          <ng-container *ngIf="country?.flagUrl">
+            <ion-img [src]="country?.flagUrl" class="country-flag"></ion-img>
           </ng-container>
         </ion-thumbnail>
         <ion-label>
-          {{ country.country }}
+          {{ country?.country }}
         </ion-label>
         <div class="details">
           <span *ngIf="selectedCountryPopulation[country.country] !== undefined" class="population">

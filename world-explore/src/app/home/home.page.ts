@@ -1,9 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { Country } from '../models/model';
 import { CountryService } from '../services/country.service.service';
-import { take } from 'rxjs/operators';
-import { CountryCode } from '../shared/country-code.enum';  // Import the enum from the shared folder
-import { ToastController } from '@ionic/angular';  // Import ToastController
+import { finalize, take } from 'rxjs/operators';
+import { CountryCode } from '../shared/country-code.enum'; 
+import { ToastController } from '@ionic/angular';  
 
 @Component({
   selector: 'app-home',
@@ -22,7 +22,7 @@ export class HomePage implements OnInit {
 
   constructor(
     private countryService: CountryService,
-    private toastController: ToastController  // Inject ToastController
+    private toastController: ToastController 
   ) {}
 
   ngOnInit() {
@@ -59,22 +59,34 @@ export class HomePage implements OnInit {
 
   loadCountryFlags() {
     this.countries.forEach(country => {
-      if (country && country.iso2) {  // Safe check for country and iso2
-        this.countryService.getFlag(country.iso2).pipe(take(1)).subscribe(flagResponse => {
-          country.flagUrl = flagResponse?.data?.flag ?? '';
-        });
+      if (country && country.iso2) {
+        this.countryService.getFlag(country.iso2).pipe(
+          take(1), 
+          finalize(() => {
+            
+           
+          })
+        ).subscribe(
+          flagResponse => {
+            country.flagUrl = flagResponse?.data?.flag ?? '';
+          },
+          error => {
+            console.error('Error fetching flag:', error);
+          }
+        );
       }
     });
   }
+  
 
   showPopulation(country: Country) {
-    if (this.selectedCountryPopulation[country.country] !== undefined) {
-      delete this.selectedCountryPopulation[country.country];
+    if (this.selectedCountryPopulation[country?.country] !== undefined) {
+      delete this.selectedCountryPopulation[country?.country];
     } else {
-      this.countryService.getPopulation(country.iso3).pipe(take(1)).subscribe(data => {
+      this.countryService.getPopulation(country?.iso3).pipe(take(1)).subscribe(data => {
         const population = data?.data?.populationCounts?.at(-1);
         if (population) {
-          this.selectedCountryPopulation[country.country] = population.value;
+          this.selectedCountryPopulation[country?.country] = population.value;
         }
       });
     }
@@ -90,13 +102,13 @@ export class HomePage implements OnInit {
     const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
 
     this.filteredCountries = this.countries.filter(country => {
-      const lowerCaseCountryName = country.country.toLowerCase();
+      const lowerCaseCountryName = country?.country.toLowerCase();
       const matchesSearchTerm = lowerCaseCountryName.includes(lowerCaseSearchTerm);
-      const isFavorite = this.favoriteCountries.has(country.country);
+      const isFavorite = this.favoriteCountries.has(country?.country);
 
       return matchesSearchTerm &&
         (!this.showFavorites || isFavorite) &&
-        country.iso3 !== CountryCode.ISR;
+        country?.iso3 !== CountryCode?.ISR;
     });
   }
 
@@ -108,15 +120,15 @@ export class HomePage implements OnInit {
   }
 
   toggleFavorite(country: Country, event: any) {
-    event.detail.side === 'start' ? this.favoriteCountries.add(country.country) :
-     (this.favoriteCountries.delete(country.country), this.filterCountries());
+    event.detail.side === 'start' ? this.favoriteCountries.add(country?.country) :
+     (this.favoriteCountries.delete(country?.country), this.filterCountries());
   }
   
 
   deleteCountry(country: Country) {
     if (this.showFavorites) {
       this.filteredCountries = this.filteredCountries.filter(c => c !== country);
-      this.favoriteCountries.delete(country.country);
+      this.favoriteCountries.delete(country?.country);
     }
   }
 
@@ -126,7 +138,6 @@ export class HomePage implements OnInit {
   }
 
   isSafeFlagUrl(url: string): boolean {
-    // Implement any additional checks needed
     return url.startsWith('https://');
   }
 }
